@@ -1,9 +1,7 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
-
-use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Biodata;
 use App\Models\Berkas;
@@ -92,6 +90,7 @@ class AuthController extends Controller
                 $latestPanitia = User::whereNotNull('id_panitia')
                     ->where('id_panitia', 'LIKE', "PNT-{$year}-%")
                     ->orderBy('id_user', 'desc')
+                    ->lockForUpdate()
                     ->first();
 
                 if ($latestPanitia) {
@@ -112,25 +111,25 @@ class AuthController extends Controller
                 'id_panitia' => $idPanitia,
             ]);
 
-            // if ($role === 'siswa') {
-            //     $biodata = Biodata::create([
-            //         'id_user' => $user->id_user,
-            //         'nama_lengkap' => $cachedData['nama_lengkap'],
-            //     ]);
+            if ($role === 'siswa') {
+                $biodata = Biodata::create([
+                    'id_user' => $user->id_user,
+                    'nama_lengkap' => $cachedData['nama_lengkap'],
+                ]);
 
-            //     $berkas = Berkas::create([
-            //         'id_user' => $user->id_user,
-            //         'status_verifikasi' => 'belum_diunggah',
-            //     ]);
+                $berkas = Berkas::create([
+                    'id_user' => $user->id_user,
+                    'status_verifikasi' => 'belum_diunggah',
+                ]);
 
-            //     PendaftaranSpmb::create([
-            //         'id_user' => $user->id_user,
-            //         'id_biodata' => $biodata->id_biodata,
-            //         'id_berkas' => $berkas->id_berkas,
-            //         'no_pendaftaran' => 'SPMB-' . date('Ymd') . '-' . str_pad($user->id_user, 4, '0', STR_PAD_LEFT),
-            //         'status_kelulusan' => 'proses',
-            //     ]);
-            // }
+                PendaftaranSpmb::create([
+                    'id_user' => $user->id_user,
+                    'id_biodata' => $biodata->id_biodata,
+                    'id_berkas' => $berkas->id_berkas,
+                    'no_pendaftaran' => 'SPMB-' . date('Ymd') . '-' . str_pad($user->id_user, 4, '0', STR_PAD_LEFT),
+                    'status_kelulusan' => 'proses',
+                ]);
+            }
 
             DB::commit();
             Cache::forget('register_' . $request->email);
